@@ -1,0 +1,11 @@
+data 0
+ldi r4,100
+ldi r5,200
+ldi r1,7
+
+ld r2,r4
+add r2,r2,r4
+st r5,r2
+inc r4,r4
+inc r5,r5
+j r1

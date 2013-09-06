@@ -1,4 +1,4 @@
 ttl-cpu
 =======
 
-TTL CPU Project
+Various files from my TTL CPU Project [ http://taw.chaosforge.org/ttl-cpu/ ]

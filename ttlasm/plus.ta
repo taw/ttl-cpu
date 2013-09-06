@@ -1,0 +1,5 @@
+ldi r1, 0x0
+ldi r2, 0x1
+ldi r3, 0x6
+add r1,r1,r2
+j r3

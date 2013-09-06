@@ -1,0 +1,8 @@
+data 0
+
+ldi r1,0x100
+ldi r3,0x5
+
+ld r2,r1
+inc r1,r1
+j r3

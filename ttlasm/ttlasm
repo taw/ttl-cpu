@@ -1,0 +1,97 @@
+#!/usr/bin/perl -w
+
+sub LDI
+{
+    my ($w, $r, $i) = @_;
+    ($w << 13) | ($r << 10) | (0x1 << 8) | $i;
+}
+
+sub ALU
+{
+    my ($w, $r1, $r2, $ai, $bi, $kin, $m) = @_;
+    ($w << 13) | ($r1 << 10) | (0x0 << 8) | ($ai << 7) |  ($ai << 6) | ($kin << 5) | ($m << 3) | $r2;
+}
+
+sub LD
+{
+    my ($w, $a) = @_;
+    ($w << 13) | ($a << 10) | (0x2 << 8) | (0x0 << 7);
+}
+
+sub ST
+{
+    my ($a, $r) = @_;
+    ($a << 10) | (0x2 << 8) | (0x1 << 7) | $r;
+}
+
+sub J
+{
+    my ($a, $kp, $kn, $zp, $zn) = @_;
+    ($a << 10) | (0x3 << 8) | ($kp << 7) | ($kn << 6) | ($zp << 5) | ($zn << 4);
+}
+
+my %label;
+my @mem;
+$mem[$_] = 0 for (0..0xFFFF);
+$addr = 0;
+
+while(<>)
+{
+    if(/^data\s+0x([0-9a-f]+)/i) {
+	$mem[$addr++] = hex($1);
+    } elsif(/^data\s+(\d+)/i) {
+	$mem[$addr++] = $1;
+    } elsif(/^:(\S+)/) {
+	$label{$1} = $addr;
+    } elsif(/^mov\s+r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, 0, 1, 0, 0, 0);
+    } elsif(/^neg\s+r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, 0, 0, 0, 0, 0);
+    } elsif(/^nand\s+r(\d+)\s*,\s*r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, $3, 0, 0, 0, 0);
+    } elsif(/^and\s+r(\d+)\s*,\s*r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, $3, 1, 1, 0, 0);
+    } elsif(/^nor\s+r(\d+)\s*,\s*r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, $3, 0, 0, 0, 1);
+    } elsif(/^or\s+r(\d+)\s*,\s*r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, $3, 1, 1, 0, 1);
+    } elsif(/^add\s+r(\d+)\s*,\s*r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, $3, 0, 0, 0, 2);
+    } elsif(/^inc\s+r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, 0, 0, 0, 1, 2);
+    } elsif(/^sub\s+r(\d+)\s*,\s*r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, $3, 0, 1, 1, 2);
+    } elsif(/^dec\s+r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ALU($1, $2, 0, 0, 1, 0, 2);
+    } elsif(/^ldi\s+r(\d+)\s*,\s*0x([0-9a-f]+)/i) {
+	my $h = (hex($2)>>8) & 0xFF;
+	my $l = (hex($2)) & 0xFF;
+	$mem[$addr++] = LDI($1, $1, $h);
+	$mem[$addr++] = LDI($1, $1, $l);	
+    } elsif(/^ldi\s+r(\d+)\s*,\s*(\d+)/i) {
+	my $h = ($2>>8) & 0xFF;
+	my $l = ($2) & 0xFF;
+	$mem[$addr++] = LDI($1, $1, $h);
+	$mem[$addr++] = LDI($1, $1, $l);	
+    } elsif(/^j\s+r(\d+)/i) {
+	$mem[$addr++] = J($1, 0, 0, 0, 0);
+    } elsif(/^jc\s+r(\d+)/i) {
+	$mem[$addr++] = J($1, 1, 0, 0, 0);
+    } elsif(/^jnc\s+r(\d+)/i) {
+	$mem[$addr++] = J($1, 0, 1, 0, 0);
+    } elsif(/^jz\s+r(\d+)/i) {
+	$mem[$addr++] = J($1, 0, 0, 1, 0);
+    } elsif(/^jnz\s+r(\d+)/i) {
+	$mem[$addr++] = J($1, 0, 0, 0, 1);
+    } elsif(/^st\s+r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = ST($1, $2);
+    } elsif(/^ld\s+r(\d+)\s*,\s*r(\d+)/i) {
+	$mem[$addr++] = LD($1, $2);
+    } elsif(/^\s*$/) {
+    } else {
+	die "Can't parse: $_"
+    }
+}
+
+# printf "%016b\n", $_ for (@mem);
+printf "0x%04X\n", $_ for (@mem);
