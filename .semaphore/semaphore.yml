@@ -13,5 +13,5 @@ blocks:
             - sudo apt install -y iverilog
             - checkout
             - sem-version ruby 3.2.2
-            - bundle install --deployment --path vendor/bundle
+            - bundle install --path vendor/bundle
             - bundle exec rake test
